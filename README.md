@@ -1,13 +1,13 @@
 # Learn-SQL
 Querys de los Ejercicios sql-practice
 
-#Base de Datos Hospital
-######Diagrama 
+# Base de Datos Hospital
+###### Diagrama 
 
 
 
-##Nivel Básico
-#####Pregunta 1
+## Nivel Básico
+##### Pregunta 1
 Show first name, last name, and gender of patients whose gender is 'M'
 ```
 SELECT 
