@@ -419,3 +419,172 @@ from (
   group by admission_date
 )
 ```
+## Nivel Avanzado
+##### Pregunta 1
+Show all of the patients grouped into weight groups.
+Show the total amount of patients in each weight group.
+Order the list by the weight group decending.
+For example, if they weight 100 to 109 they are placed in the 100 weight group, 110-119 = 110 weight group, etc.
+```
+SELECT
+    FLOOR(weight / 10) * 10 AS weight_group,
+    COUNT(*) AS total_patients
+FROM patients
+GROUP BY FLOOR(weight / 10)
+ORDER BY FLOOR(weight / 10) DESC
+)
+```
+##### Pregunta 2
+Show patient_id, weight, height, isObese from the patients table.
+Display isObese as a boolean 0 or 1.
+Obese is defined as weight(kg)/(height(m)2) >= 30.
+weight is in units kg.
+height is in units cm
+```
+select
+patient_id,
+weight,
+height,
+case
+    when weight/(POWER((height / 100.0), 2)) >= 30 then 1
+    else 0
+end as isObese
+from patients
+)
+```
+##### Pregunta 3
+Show patient_id, first_name, last_name, and attending doctor's specialty.
+Show only the patients who has a diagnosis as 'Epilepsy' and the doctor's first name is 'Lisa'
+```
+select
+a.patient_id,
+a.first_name as patient_first_name,
+a.last_name as patient_last_name,
+c.specialty as attending_doctor_speciality
+from admissions as b
+left join patients as a on a.patient_id = b.patient_id
+left join doctors as c on c.doctor_id = b.attending_doctor_id
+where b.diagnosis = 'Epilepsy' and 
+c.first_name = 'Lisa'
+)
+```
+##### Pregunta 4
+All patients who have gone through admissions, can see their medical documents on our site. Those patients are given a temporary password after their first admission. Show the patient_id and temp_password.
+The password must be the following, in order:
+1. patient_id
+2. the numerical length of patient's last_name
+3. year of patient's birth_date
+```
+select
+a.patient_id as patient_id, 
+concat(a.patient_id,len(b.last_name),year(b.birth_date)	)as temp_password
+from admissions as a
+join patients as b on b.patient_id = a.patient_id
+group by a.patient_id
+```
+##### Pregunta 5
+Each admission costs $50 for patients without insurance, and $10 for patients with insurance. All patients with an even patient_id have insurance.
+Give each patient a 'Yes' if they have insurance, and a 'No' if they don't have insurance. Add up the admission_total cost for each has_insurance group.
+```
+SELECT 
+    CASE 
+        WHEN patient_id % 2 = 0 THEN 'Yes'
+        ELSE 'No'
+    END AS has_insurance,
+    SUM(CASE 
+            WHEN patient_id % 2 = 0 THEN 10
+            ELSE 50
+        END) AS cost_after_insurance
+FROM admissions
+GROUP BY has_insurance
+)
+```
+##### Pregunta 6
+Show the provinces that has more patients identified as 'M' than 'F'. Must only show full province_name
+```
+SELECT a.province_name
+FROM province_names a
+         JOIN patients p ON a.province_id = p.province_id
+GROUP BY province_name
+HAVING SUM(CASE WHEN p.gender = 'M' THEN 1 ELSE 0 END) > SUM(CASE WHEN p.gender = 'F' THEN 1 ELSE 0 END)
+)
+```
+##### Pregunta 7
+We are looking for a specific patient. Pull all columns for the patient who matches the following criteria:
+- First_name contains an 'r' after the first two letters.
+- Identifies their gender as 'F'
+- Born in February, May, or December
+- Their weight would be between 60kg and 80kg
+- Their patient_id is an odd number
+- They are from the city 'Kingston'
+```
+SELECT * 
+FROM patients
+WHERE 
+    LENGTH(first_name) >= 2 AND
+    SUBSTRING(first_name, 3, 1) = 'r' AND
+    gender = 'F' AND 
+    birth_date IS NOT NULL AND
+    MONTH(birth_date) IN (2, 5, 12) AND 
+    weight BETWEEN 60 AND 80 AND 
+    patient_id % 2 <> 0 AND 
+    city = 'Kingston';
+)
+```
+##### Pregunta 8
+Show the percent of patients that have 'M' as their gender. Round the answer to the nearest hundreth number and in percent form.
+```
+WITH porcentaje_T AS (
+    SELECT COUNT(*) AS sexo_T
+    FROM patients
+),
+porcentaje_M AS (
+    SELECT COUNT(*) AS sexo_M
+    FROM patients
+    WHERE gender LIKE '%M%'
+)
+SELECT 
+   concat(ROUND(CAST(porcentaje_M.sexo_M AS FLOAT) / porcentaje_T.sexo_T * 100, 2),'%') AS percent_of_male_patients
+FROM porcentaje_T, porcentaje_M;
+)
+```
+##### Pregunta 9
+For each day display the total amount of admissions on that day. Display the amount changed from the previous date.
+```
+select
+admission_date, 
+count(*) as admission_day,
+COUNT(*) - LAG(COUNT(admission_date)) OVER (ORDER BY admission_date) as admission_count_change
+from admissions
+group by admission_date
+)
+```
+##### Pregunta 10
+Sort the province names in ascending order in such a way that the province 'Ontario' is always on top.
+```
+select province_name
+from province_names
+order by province_name = 'Ontario' desc
+)
+```
+##### Pregunta 11
+We need a breakdown for the total amount of admissions each doctor has started each year. Show the doctor_id, doctor_full_name, specialty, year, total_admissions for that year.
+```
+WITH conteo AS (
+    SELECT
+        attending_doctor_id,
+        COUNT(*) AS admisiones,
+        YEAR(admission_date) AS anio
+    FROM admissions
+    GROUP BY attending_doctor_id, YEAR(admission_date)
+)
+SELECT
+    a.doctor_id,
+    CONCAT(a.first_name, ' ', a.last_name) AS doctor_full_name,
+    a.specialty,
+    b.anio AS year,
+    b.admisiones AS total_admissions
+FROM doctors AS a
+JOIN conteo AS b ON a.doctor_id = b.attending_doctor_id
+ORDER BY b.anio, a.doctor_id;
+```
