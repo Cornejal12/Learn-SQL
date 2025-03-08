@@ -3,6 +3,7 @@ Querys de los Ejercicios sql-practice
 
 # Base de Datos Hospital
 ###### Diagrama 
+![Captura de pantalla 2025-03-06 230951](https://github.com/user-attachments/assets/22495544-e4b5-4a00-b3c6-b078265bc26f)
 
 
 ## Nivel Básico
